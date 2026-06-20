@@ -1,128 +1,126 @@
+#include <iostream>
+#include <chrono>
+#include <thread>
 
-#include <iostream>  //i/o
-#include <vector>    //for board
-#include <algorithm> //vector functions
-#include <chrono>    //time
-#include <thread>    //sleep
-
-#include "functions.h" //has all functions
-#include "checkmate.h" //checks whether theres checkmate
-#include "ANSI Windows Terminal.h" //cross platform 
+#include "chess_engine.h"
+#include "display.h"
+#include "input.h"
 
 #ifdef _WIN32
-	bool ok = init_term();
+    bool _win_init = init_term();
 #endif
 
-using namespace std;
+using std::cout;
 
-//stores the entire chess board
-vector<vector<piece> > chess_board = {
-    { {"rook",'b'}, {"knight",'b'}, {"bishop",'b'}, {"queen",'b'}, {"king",'b'}, {"bishop",'b'}, {"knight",'b'}, {"rook",'b'} },
-    { {"pawn", 'b'}, {"pawn", 'b'}, {"pawn", 'b'}, {"pawn", 'b'}, {"pawn", 'b'}, {"pawn", 'b'}, {"pawn", 'b'}, {"pawn", 'b'} },
-    { {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'} },
-    { {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'} },
-    { {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'} },
-    { {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'}, {"space",'s'} },
-    { {"pawn", 'w'}, {"pawn", 'w'}, {"pawn", 'w'}, {"pawn", 'w'}, {"pawn", 'w'}, {"pawn", 'w'}, {"pawn", 'w'}, {"pawn", 'w'} },
-    { {"rook",'w'}, {"knight",'w'}, {"bishop",'w'}, {"queen",'w'}, {"king",'w'}, {"bishop",'w'}, {"knight",'w'}, {"rook",'w'} },
-};
-
-//Function Declarations
-void move(char color);
-void print_title();
-
-
-//main
-int main(){
-
-    print_title();
-    
-    char current_turn = 'w'; //colours representing current turn 
-    //'w' = white & 'b' == black
-
-    while(true){ //RUN ONE TURN 
-        
-        printf("\033[2J"); //clear screen
-        print(chess_board);
-        move(current_turn);
-        printf("\033[2J");
-        print(chess_board);
-   
-        //check for special case
-        if(is_king_eaten()) break;
-            
-        //check if checkmate after move
-        bool is_checkmate = checkmate(chess_board, current_turn);
-        if(is_checkmate)
-            break;
-        else //if not checkmate check if check
-            bool is_check = check(chess_board, current_turn);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        //change turn color 
-        current_turn = (current_turn == 'w') ? 'b' : 'w';
-
-        printf("\x1b[1m\n\n\nFLIPPING BOARD FOR NEXT PLAYER...\n\x1b[0m");
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        flip_board(&chess_board);
-    }
-
-    cout<<"THE WINNER IS....\n\n";
-    if(current_turn == 'w') cout<<"WHITE!\n";
-    else cout<<"BLACK!\n";
-    cout<<"THANKS FOR PLAYING\n";
-    return 0;
-
-}
-
-//moves pieces and eats other pieces 
-void move(char color){
-    bool good_move = false;
-    int r1, c1, r2, c2;
-    while(!good_move){
-        get_start_piece (chess_board, color, &r1, &c1);
-        get_end_piece   (chess_board, color, &r1, &c1, &r2, &c2);
-        piece selected = chess_board[r1][c1];
-        if(selected.n == "pawn"){
-            good_move = pawn_move(&chess_board, r1, c1, r2, c2);
-        }else if(selected.n == "rook"){
-            good_move = rook_move(&chess_board, r1, c1, r2, c2);
-        }else if(selected.n == "bishop"){
-            good_move = bishop_move(&chess_board, r1, c1, r2, c2);
-        }else if(selected.n == "knight"){
-            good_move = knight_move(&chess_board, r1, c1, r2, c2);
-        }else if(selected.n == "queen"){
-            good_move = queen_move(&chess_board, r1, c1, r2, c2);
-        }else if(selected.n == "king"){
-            good_move = king_move(&chess_board, r1, c1, r2, c2);
-        }
-    }
-}
-
-void print_title(){
-
-    printf("\x1b[38;5;21m"); //make color blue
-
-    cout<<" ██████╗██╗  ██╗███████╗███████╗███████╗    \n";
-    cout<<"██╔════╝██║  ██║██╔════╝██╔════╝██╔════╝    \n";
-    cout<<"██║     ███████║█████╗  ███████╗███████╗    \n";
-    cout<<"██║     ██╔══██║██╔══╝  ╚════██║╚════██║    \n";
-    cout<<"╚██████╗██║  ██║███████╗███████║███████║    \n";
-    cout<<" ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝    \n";
-
-    printf("\x1b[0m"); //reset color
+static void print_title() {
+    printf("\x1b[38;5;21m");
+    cout << " ██████╗██╗  ██╗███████╗███████╗███████╗    \n";
+    cout << "██╔════╝██║  ██║██╔════╝██╔════╝██╔════╝    \n";
+    cout << "██║     ███████║█████╗  ███████╗███████╗    \n";
+    cout << "██║     ██╔══██║██╔══╝  ╚════██║╚════██║    \n";
+    cout << "╚██████╗██║  ██║███████╗███████║███████║    \n";
+    cout << " ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝    \n";
+    printf("\x1b[0m");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    cout<<".\n";
+    cout << ".\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(400));
-    cout<<"..\n";
+    cout << "..\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    cout<<"...\n";
+    cout << "...\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(600));
-    cout<<"....\n";
+    cout << "....\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(600));
-    cout<<".....\n";
+    cout << ".....\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(600));
-    printf("\033[2J"); //clear screen
+    printf("\033[2J");
+}
 
+int main() {
+    print_title();
+
+    GameState gs = make_initial_state();
+    std::string end_reason;
+    char winner = 's'; // 's' = no winner (draw)
+
+    while (true) {
+        // Clear screen and show board
+        printf("\033[2J");
+
+        // Show board from current player's perspective
+        char viewing_as = gs.turn;
+        print_board(gs.board, viewing_as);
+
+        // Show CHECK if current player is in check
+        if (is_in_check(gs.board, gs.turn)) {
+            print_check();
+        }
+
+        cout << "\n";
+        if (gs.turn == 'w') cout << "WHITE's turn\n";
+        else                 cout << "BLACK's turn\n";
+
+        // Get and apply move
+        bool move_made = false;
+        while (!move_made) {
+            UserMove um = get_user_move(gs, viewing_as);
+            MoveOutcome out = try_move(gs, um.r1, um.c1, um.r2, um.c2, um.promotion);
+
+            if (!out.valid) {
+                cout << "INVALID: " << out.error << "\n";
+                cout << "Try again.\n";
+                continue;
+            }
+
+            move_made = true;
+
+            // Show board after move
+            printf("\033[2J");
+            // gs.turn has already been switched in try_move; show board from the new player's view
+            // but for the post-move display, show from the PREVIOUS player's perspective briefly
+            print_board(gs.board, (gs.turn == 'w') ? 'b' : 'w');
+
+            // Handle game endings
+            if (out.is_checkmate) {
+                print_checkmate();
+                // The player who just moved wins; gs.turn now points to the LOSING side
+                winner = (gs.turn == 'w') ? 'b' : 'w';
+                end_reason = "checkmate";
+                goto game_over;
+            }
+            if (out.is_stalemate) {
+                end_reason = "stalemate";
+                goto game_over;
+            }
+            if (out.is_draw_fifty) {
+                end_reason = "50-move rule";
+                goto game_over;
+            }
+            if (out.is_draw_repetition) {
+                end_reason = "threefold repetition";
+                goto game_over;
+            }
+            if (out.is_draw_material) {
+                end_reason = "insufficient material";
+                goto game_over;
+            }
+
+            if (out.gives_check) {
+                print_check();
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        cout << "\x1b[1m\n\n\nFLIPPING BOARD FOR NEXT PLAYER...\n\x1b[0m";
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+game_over:
+    cout << "\n\nGAME OVER — " << end_reason << "\n\n";
+    if (winner == 'w')      cout << "WHITE WINS!\n";
+    else if (winner == 'b') cout << "BLACK WINS!\n";
+    else                    cout << "DRAW!\n";
+    cout << "THANKS FOR PLAYING\n";
+    return 0;
 }

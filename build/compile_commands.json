@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/Users/anna/Documents/github/chess/Chess/build",
+  "command": "/usr/bin/clang++ -O3 -DNDEBUG -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -Wall -Wextra -std=gnu++20 -o CMakeFiles/main.dir/main.cpp.o -c /Users/anna/Documents/github/chess/Chess/main.cpp",
+  "file": "/Users/anna/Documents/github/chess/Chess/main.cpp"
+},
+{
+  "directory": "/Users/anna/Documents/github/chess/Chess/build",
+  "command": "/usr/bin/clang++ -O3 -DNDEBUG -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.7 -Wall -Wextra -std=c++20 -std=gnu++20 -o CMakeFiles/chess_test.dir/test.cpp.o -c /Users/anna/Documents/github/chess/Chess/test.cpp",
+  "file": "/Users/anna/Documents/github/chess/Chess/test.cpp"
+}
+]

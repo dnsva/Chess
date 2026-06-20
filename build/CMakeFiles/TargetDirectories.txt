@@ -1,0 +1,4 @@
+/Users/anna/Documents/github/chess/Chess/build/CMakeFiles/main.dir
+/Users/anna/Documents/github/chess/Chess/build/CMakeFiles/chess_test.dir
+/Users/anna/Documents/github/chess/Chess/build/CMakeFiles/edit_cache.dir
+/Users/anna/Documents/github/chess/Chess/build/CMakeFiles/rebuild_cache.dir
